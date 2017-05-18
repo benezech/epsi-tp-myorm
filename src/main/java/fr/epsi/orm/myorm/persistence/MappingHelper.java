@@ -51,9 +51,12 @@ public class MappingHelper {
     public static Map<String, Object> entityToParams(Object entity, Predicate<Field>... predicates) {
         HashMap res = new HashMap<>();
         ReflectionUtil.getFields(entity.getClass(), predicates).filter(field ->
-                ReflectionUtil.getAnnotationForField(field, Transient.class).isPresent())
+                !ReflectionUtil.getAnnotationForField(field, Transient.class).isPresent())
                     .forEach(field -> {
-            res.put(SqlGenerator.getColumnNameForField(field), field);
+                        Optional value = ReflectionUtil.getValue(field, entity);
+                        if (value.isPresent() && SqlGenerator.getColumnNameForField(field) != "id") {
+                            res.put(SqlGenerator.getColumnNameForField(field), value.get());
+                        }
         });
         return res;
     }

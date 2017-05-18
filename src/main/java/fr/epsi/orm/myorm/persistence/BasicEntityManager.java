@@ -110,13 +110,42 @@ public class BasicEntityManager implements EntityManager {
     public <T> Optional<T> save(T entity) throws SQLException {
         isManagedClass(entity.getClass());
 
-        NamedPreparedStatement statement = NamedPreparedStatement.prepare(datasource.getConnection(), "SELECT * FROM " +
-                SqlGenerator.getTableForEntity(entity.getClass()));
+        ArrayList<String> fieldNames = new ArrayList<>();
+        ArrayList<String> fieldValues = new ArrayList<>();
 
-        statement.setParameters(MappingHelper.entityToParams(entity));
-        ResultSet rs = statement.executeQuery();
+        Map<String, Object> map = MappingHelper.entityToParams(entity);
+
+        map.keySet().forEach(key -> {
+            fieldNames.add(key);
+        });
+
+        map.values().forEach(value -> {
+            fieldValues.add(value.toString());
+        });
+
+        // force la génération auto d'ID
+        boolean defaultId = true;
+
+        String i = "INSERT INTO "
+                + SqlGenerator.getTableForEntity(entity.getClass())
+                + " ("
+                + (defaultId ? "id, " : "")
+                + String.join(", ", fieldNames)
+                + ") VALUES ("
+                + (defaultId ? "default, " : "")
+                + "'"
+                + String.join("', '", fieldValues)
+                + "')";
+        System.out.println(i);
+        NamedPreparedStatement statement = NamedPreparedStatement.prepareWithKeys(datasource.getConnection(), i);
+
+        statement.execute();
+        ResultSet rs = statement.getGeneratedKeys();
         rs.next();
-        return Optional.of((T) MappingHelper.mapToInstance(rs, entity.getClass()));
+        Long generatedId = rs.getLong(1);
+        ReflectionUtil.setValue(ReflectionUtil.getFieldByName(entity.getClass(), "id").get(), entity, generatedId);
+
+        return Optional.of(entity);
     }
 
     /**
