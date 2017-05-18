@@ -13,6 +13,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -54,7 +55,12 @@ public class BasicEntityManagerTest {
         expected.setEmail("uncle@bob.com");
         expected.setBirthDate(LocalDate.of(1962, 04,17));
 
-        Optional<User> actual = em.find(User.class, 2l);
+        Optional<User> actual = null;
+        try {
+            actual = em.find(User.class, 2l);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         if (!actual.isPresent()) {
             fail("User not found in db");
         }
@@ -64,7 +70,11 @@ public class BasicEntityManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testFindReject() {
-        em.find(InvalidUserNoEntity.class, null);
+        try {
+            em.find(InvalidUserNoEntity.class, null);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -89,12 +99,20 @@ public class BasicEntityManagerTest {
         expected2.setBirthDate(LocalDate.of(1962,04, 17));
 
         List<User> expectedStream = Arrays.asList(expected, expected1, expected2);
-        assertEquals(expectedStream, em.findAll(User.class));
+        try {
+            assertEquals(expectedStream, em.findAll(User.class));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testFindAllReject() {
-        em.findAll(InvalidUserNoEntity.class);
+        try {
+            em.findAll(InvalidUserNoEntity.class);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -112,7 +130,12 @@ public class BasicEntityManagerTest {
         assertNotEquals(Long.valueOf(0), user.getId());
         assertEquals(Integer.valueOf(0), user.getConnectionCount());
 
-        User actual = em.find(User.class, user.getId()).orElseThrow(() -> new AssertionError("Error while retrieving new User inserted"));
+        User actual = null;
+        try {
+            actual = em.find(User.class, user.getId()).orElseThrow(() -> new AssertionError("Error while retrieving new User inserted"));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         assertEquals(user, actual);
     }
 

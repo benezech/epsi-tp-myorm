@@ -40,16 +40,26 @@ public class BasicEntityManager implements EntityManager {
      *  - Class should have one and only one field with the @Id annotation
      *
      * @param persistentClasses
+     * @throws IllegalArgumentException if a class does not match the conditions
      */
     private static void checkPersistentClasses(Set<Class<?>> persistentClasses) {
-
+        persistentClasses.forEach(entityClass -> {
+            ReflectionUtil.getAnnotationForClass(entityClass, Entity.class)
+                .orElseThrow(() -> new IllegalArgumentException("Illegal class passed to EntityManager"));
+            if (ReflectionUtil.getFieldsDeclaringAnnotation(entityClass, Id.class)
+                .count() != 1) {
+                throw new IllegalArgumentException("c'est pas bon");
+            }
+        });
+        //for (Class<?> entityClass: persistentClasses) {
+        //}
     }
 
     /**
      * Check id a Class is managed by this EntityManager
      * @param checkClass
      */
-    private void isManagedClass(Class<?> checkClass) {
+    private void isManagedClass(Class<?> checkClass) throws IllegalArgumentException {
         if (!persistentClasses.contains(checkClass)) {
             throw new IllegalArgumentException("The class "+checkClass.getName()+" is not managed by this EntityManager ...");
         }
@@ -70,16 +80,27 @@ public class BasicEntityManager implements EntityManager {
      * @see EntityManager#find(Class, Object)
      */
     @Override
-    public <T> Optional<T> find(Class<T> entityClass, Object id) {
-      return Optional.empty();
+    public <T> Optional<T> find(Class<T> entityClass, Object id) throws SQLException {
+        isManagedClass(entityClass);
+
+        NamedPreparedStatement statement = NamedPreparedStatement.prepare(datasource.getConnection(), "SELECT * FROM " +
+                SqlGenerator.getTableForEntity(entityClass) + " WHERE id = '" + id.toString() + "'");
+
+        ResultSet res = statement.executeQuery();
+        res.next();
+        return Optional.of(MappingHelper.mapToInstance(res, entityClass));
     }
 
     /**
      * @see EntityManager#findAll(Class)
      */
     @Override
-    public <T> List<T> findAll(Class<T> entityClass) {
-        return new ArrayList<>();
+    public <T> List<T> findAll(Class<T> entityClass) throws SQLException, IllegalArgumentException {
+        isManagedClass(entityClass);
+        NamedPreparedStatement statement = NamedPreparedStatement.prepare(datasource.getConnection(), "SELECT * FROM " +
+                SqlGenerator.getTableForEntity(entityClass));
+
+        return MappingHelper.mapFromResultSet(entityClass, statement.executeQuery());
     }
 
     /**
@@ -87,6 +108,8 @@ public class BasicEntityManager implements EntityManager {
      */
     @Override
     public <T> Optional<T> save(T entity) {
+        isManagedClass(entity.getClass());
+
         return Optional.empty();
     }
 

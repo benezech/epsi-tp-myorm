@@ -34,16 +34,21 @@ public class MappingHelper {
         T instance = ReflectionUtil.instanciate(entityClass).get();
         List<Field> fields = ReflectionUtil.getFieldsWithoutTransient(instance.getClass()).collect(Collectors.toList());
         for (Field field : fields) {
-            ReflectionUtil.setValue(field, instance, MappingHelper.getFromResultSetByType(field.getType(), rs, field.getName()));
+            ReflectionUtil.setValue(field, instance, MappingHelper.getFromResultSetByType(field.getType(), rs, SqlGenerator.getColumnNameForField(field)));
         }
         return instance;
     }
 
     public static <T> List<T> mapFromResultSet(Class<? extends T> entityClass, ResultSet rs) throws SQLException {
-        return new ArrayList<>();
+        List<T> result = new ArrayList<T>();
+        while (rs.next()) {
+            result.add(mapToInstance(rs, entityClass));
+        }
+        return result;
     }
 
     public static Map<String, Object> entityToParams(Object entity, Predicate<Field>... predicates) {
+        
         return new HashMap<>();
     }
 }

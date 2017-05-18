@@ -37,10 +37,10 @@ public class SqlGenerator {
 
     public static String generateDeleteSql(Class<?> entityClass) {
         return ReflectionUtil.getFieldDeclaringAnnotation(entityClass, Id.class)
-                .map((f) ->
+                .map(f ->
                         "DELETE FROM "+
                         getTableForEntity(entityClass)+
-                        " WHERE "+ getColumnNameForField(f) + " = :"+f.getName())
+                        " WHERE "+ getColumnNameForField(f) + " = :" + f.getName())
                 .orElse("");
     }
 }
