@@ -107,10 +107,16 @@ public class BasicEntityManager implements EntityManager {
      * @see EntityManager#save(Object)
      */
     @Override
-    public <T> Optional<T> save(T entity) {
+    public <T> Optional<T> save(T entity) throws SQLException {
         isManagedClass(entity.getClass());
 
-        return Optional.empty();
+        NamedPreparedStatement statement = NamedPreparedStatement.prepare(datasource.getConnection(), "SELECT * FROM " +
+                SqlGenerator.getTableForEntity(entity.getClass()));
+
+        statement.setParameters(MappingHelper.entityToParams(entity));
+        ResultSet rs = statement.executeQuery();
+        rs.next();
+        return Optional.of((T) MappingHelper.mapToInstance(rs, entity.getClass()));
     }
 
     /**

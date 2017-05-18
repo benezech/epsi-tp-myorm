@@ -48,7 +48,10 @@ public class MappingHelper {
     }
 
     public static Map<String, Object> entityToParams(Object entity, Predicate<Field>... predicates) {
-        
-        return new HashMap<>();
+        HashMap res = new HashMap<>();
+        ReflectionUtil.getFields(entity.getClass(), predicates).filter(field -> true).forEach(field -> {
+            res.put(SqlGenerator.getColumnNameForField(field), field);
+        });
+        return res;
     }
 }

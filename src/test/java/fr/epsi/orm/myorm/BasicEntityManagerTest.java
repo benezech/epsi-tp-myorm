@@ -124,7 +124,12 @@ public class BasicEntityManagerTest {
         user.setEmail("test.null@gmail.com");
         user.setBirthDate(LocalDate.of(1990, 04,23));
 
-        Optional<User> persistedUser = em.save(user);
+        Optional<User> persistedUser = null;
+        try {
+            persistedUser = em.save(user);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         assertTrue(persistedUser.isPresent());
         user = persistedUser.get();
         assertNotEquals(Long.valueOf(0), user.getId());
@@ -141,7 +146,11 @@ public class BasicEntityManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInsertReject() {
-        em.save(new InvalidUserNoEntity());
+        try {
+            em.save(new InvalidUserNoEntity());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -151,7 +160,12 @@ public class BasicEntityManagerTest {
         user.setLastName("Teychene");
         user.setEmail("francois.teychene@gmail.com");
 
-        Optional<User> persistedUser = em.save(user);
+        Optional<User> persistedUser = null;
+        try {
+            persistedUser = em.save(user);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         if (!persistedUser.isPresent()) fail("Error during insertion");
 
         boolean deleted = em.delete(persistedUser.get());

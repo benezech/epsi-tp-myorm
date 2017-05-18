@@ -36,7 +36,7 @@ public interface EntityManager {
      * @return an Optional with the persisted entity (with generated id if needed), Optional.empty() if the save has failed
      * @throws IllegalArgumentException if entityClass is not managed by the entity manager
      */
-    <T> Optional<T> save(T entity);
+    <T> Optional<T> save(T entity) throws SQLException;
 
     /**
      * Delete an entity from the database
